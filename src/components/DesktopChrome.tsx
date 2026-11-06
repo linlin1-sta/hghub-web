@@ -106,11 +106,11 @@ export function DesktopRail({ collapsed }: { collapsed: boolean }) {
           <button className="win-account" onClick={() => { setTab("profile"); if (!user) setLoginOpen(true); }}>
             <Avatar size={34} hue={220} name={user?.nickname} icon={user ? undefined : <IUser size={17} />} />
             <span className="win-account-copy">
-              <strong>{user?.nickname || "登录 HGhub"}</strong>
+              <strong>{user?.nickname || "登录达达短剧"}</strong>
               <small>{user ? "你的精彩，都在这里" : "留住每一次心动"}</small>
             </span>
           </button>
-          <span className="win-sidebar-version">HGhub for {platform === "macos" ? "macOS" : "Windows"} {APP_VERSION}</span>
+          <span className="win-sidebar-version">达达短剧 {APP_VERSION}</span>
         </div>
       </div>
     </nav>
