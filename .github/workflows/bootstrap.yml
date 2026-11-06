@@ -18,5 +18,6 @@ jobs:
         run: |
           git config user.name "hghub-bootstrap"
           git config user.email "bootstrap@localhost"
+          rm -f .github/workflows/ios-unsigned.yml
           git add -A
           if git diff --cached --quiet; then echo "no changes"; else git commit -m "Apply web+iOS patch bundle" && git push origin HEAD:main; fi
