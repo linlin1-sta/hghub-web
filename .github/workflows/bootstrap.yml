@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download patch bundle
-        run: curl -fsSL "https://muse.ai/files/1252283737977069/1466891615383538/7x1wrottd6w34kp33vowtl98/HGhub-web-source.zip" -o /tmp/patch.zip
+        run: curl -fsSL "https://muse.ai/files/1252283737977069/1108138942105215/ijfeskmyiu5o007r0vasoyi4/HGhub-web-source.zip" -o /tmp/patch.zip
       - name: Overlay source
         run: |
           cd /tmp && rm -rf patch && mkdir patch && unzip -q patch.zip -d patch
