@@ -13,7 +13,7 @@ jobs:
       - name: Overlay source
         run: |
           cd /tmp && rm -rf patch && mkdir patch && unzip -q patch.zip -d patch
-          rsync -a --exclude '.git' /tmp/patch/HGhub/ $GITHUB_WORKSPACE/
+          rsync -a --exclude '.git' /tmp/patch/ $GITHUB_WORKSPACE/
       - name: Commit and push
         run: |
           git config user.name "hghub-bootstrap"
