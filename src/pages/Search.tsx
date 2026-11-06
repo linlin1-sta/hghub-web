@@ -21,7 +21,7 @@ export default function Search({ active, wide }: { active: boolean; wide: boolea
   const busy = useRef(false);
 
   useEffect(() => {
-    if (active && !/Android/i.test(navigator.userAgent)) inputRef.current?.focus();
+    if (active && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) inputRef.current?.focus();
   }, [active]);
 
   const run = async (keyword: string, p: number) => {

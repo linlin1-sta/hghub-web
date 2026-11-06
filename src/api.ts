@@ -10,14 +10,20 @@ export const APP_VERSION = __APP_VERSION__;
 
 const ua = navigator.userAgent;
 export const isAndroid = /Android/i.test(ua);
-export const isMacos = /Macintosh|Mac OS X/i.test(ua);
-export const platform: "android" | "windows" | "macos" = isAndroid ? "android" : isMacos ? "macos" : "windows";
+export const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+export const isMacos = !isIOS && /Macintosh|Mac OS X/i.test(ua);
+export const isMobile = isAndroid || isIOS;
+export const platform: "android" | "ios" | "windows" | "macos" = isAndroid ? "android" : isIOS ? "ios" : isMacos ? "macos" : "windows";
 
 /** 自定义协议地址随平台不同（见 tauri `register_asynchronous_uri_scheme_protocol` 文档）：
  *  Windows / Android → `http://<scheme>.localhost`
  *  macOS / iOS / Linux → `<scheme>://localhost`
  *  Rust 侧 `src-tauri/src/lib.rs` 里改写 m3u8 用的 scheme 必须与此一致。 */
-export const LOCAL = isMacos ? "hg://localhost" : "http://hg.localhost";
+/** 网页版（普通浏览器打开、没有 Tauri 桥）：命令走本站 /bridge/invoke，媒体走本站 /media。
+ *  服务端是 web/server.mjs，与桌面版 Rust 后端一一对应。 */
+export const isWeb = !("__TAURI_INTERNALS__" in window);
+
+export const LOCAL = isWeb ? "/media" : isMacos || isIOS ? "hg://localhost" : "http://hg.localhost";
 
 /** src 是否已是本地协议地址（避免在详情页把代理地址再包一层） */
 export const isLocalMedia = (src: string) => src.startsWith(`${LOCAL}/`);
@@ -31,14 +37,32 @@ export const playlist = (url: string) => `${LOCAL}/hls?u=${encodeURIComponent(ur
 
 /* ── 调用封装 ───────────────────────────────────────────── */
 
-/** 写一行到应用数据目录 debug.log（用户反馈「打不开」时要的就是它） */
-export const logLine = (msg: string) => invoke("debug_log", { msg }).catch(() => {});
+/** 统一调用口：Tauri 里走 invoke，网页里走 HTTP 桥（同名命令、同参数）。 */
+async function rawInvoke(cmd: string, args?: Record<string, unknown>): Promise<unknown> {
+  if (!isWeb) return invoke(cmd, args);
+  if (cmd === "open_url") {
+    const url = String(args?.url ?? "");
+    if (url) window.open(url, "_blank", "noopener");
+    return null;
+  }
+  const resp = await fetch("/bridge/invoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cmd, args: args ?? {} }),
+  });
+  const body = (await resp.json().catch(() => null)) as { ok?: boolean; data?: unknown; error?: string } | null;
+  if (!resp.ok || !body?.ok) throw new Error(body?.error || `HTTP ${resp.status}`);
+  return body.data;
+}
+
+/** 写一行到 debug.log（网页版写服务端日志；用户反馈「打不开」时要的就是它） */
+export const logLine = (msg: string) => { rawInvoke("debug_log", { msg }).catch(() => {}); };
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   try {
-    return (await invoke(cmd, args)) as T;
+    return (await rawInvoke(cmd, args)) as T;
   } catch (e) {
-    const msg = typeof e === "string" ? e : "请求失败，请检查网络";
+    const msg = typeof e === "string" ? e : e instanceof Error && e.message ? e.message : "请求失败，请检查网络";
     // 落盘完整错误链（dns error / connection refused / 证书错误…），toast 只显示截断版
     logLine(`[api] ${cmd} → ${msg}`);
     throw new Error(msg.length > 140 ? `${msg.slice(0, 140)}…` : msg);
@@ -76,10 +100,10 @@ export const api = {
   commentSend: (id: number, ep: number, text: string, replyId?: number) =>
     call<unknown>("api_comment_send", { id, ep, text, replyId: replyId ?? null }),
 
-  clearCache: () => invoke<void>("cache_clear"),
-  netDiag: () => invoke<Record<string, unknown>>("net_diag"),
-  postLike: (id: number, on: boolean) => invoke<unknown>("api_post_like", { id, on }),
-  postCollect: (id: number, on: boolean) => invoke<unknown>("api_post_collect", { id, on }),
+  clearCache: () => rawInvoke("cache_clear"),
+  netDiag: () => rawInvoke("net_diag") as Promise<Record<string, unknown>>,
+  postLike: (id: number, on: boolean) => rawInvoke("api_post_like", { id, on }),
+  postCollect: (id: number, on: boolean) => rawInvoke("api_post_collect", { id, on }),
   postComments: (id: number, page: number, size: number) => call<CommentPage>("api_post_comments", { id, page, size }),
   like: (id: number, ep: number, on: boolean) => call<unknown>("api_like", { id, ep, on }),
   collect: (id: number, on: boolean) => call<unknown>("api_collect", { id, on }),

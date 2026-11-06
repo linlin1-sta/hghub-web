@@ -1,0 +1,13 @@
+{
+  "name": "HGhub · 黄果短剧",
+  "short_name": "HGhub",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

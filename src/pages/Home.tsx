@@ -48,7 +48,7 @@ export default function Home({ active, bottomInset }: { active: boolean; bottomI
       )}
 
       {/* 移动端：静音 + 搜索（压在视频上，固定白字 + 半透明黑底） */}
-      {platform === "android" && !fs && (
+      {(platform === "android" || platform === "ios") && !fs && (
         <div className="absolute inset-x-0 z-20 flex items-center px-3 pointer-events-none hg-player-ui" style={{ top: "calc(var(--sat, 0px) + 6px)" }}>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setMuted((m) => !m)} aria-label={muted ? "取消静音" : "静音"}

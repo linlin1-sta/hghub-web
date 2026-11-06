@@ -7,6 +7,7 @@ import "./index.css";
 
 /* 运行期错误统一落到 debug.log，便于自查 */
 function report(kind: string, msg: string) {
+  if (!("__TAURI_INTERNALS__" in window)) return; // 网页版：服务端 /bridge 统一记录
   invoke("debug_log", { msg: `[${kind}] ${msg}` }).catch(() => {});
 }
 window.addEventListener("error", (e) => {

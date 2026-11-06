@@ -73,7 +73,7 @@ export default function LoginModal() {
     </div>
   );
 
-  return platform === "android"
+  return platform === "android" || platform === "ios"
     ? <Sheet open={loginOpen} onClose={() => setLoginOpen(false)}>{body}</Sheet>
     : <Modal open={loginOpen} onClose={() => setLoginOpen(false)} width={360}>{body}</Modal>;
 }
