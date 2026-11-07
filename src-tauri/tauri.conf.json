@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "HGhub",
+  "productName": "达达短剧",
   "version": "1.1.0",
   "identifier": "com.hghub.huangguo",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "HGhub",
+        "title": "达达短剧",
         "width": 1200,
         "height": 780,
         "minWidth": 900,
