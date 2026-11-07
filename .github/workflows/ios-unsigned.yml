@@ -52,43 +52,33 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: 构建前端 dist
-        run: pnpm build
-
       - name: 生成 iOS 工程（gen/apple，不入库、每次现生成）
         run: pnpm tauri ios init --ci
 
-      - name: xcodebuild 无签名编译出 .app
-        shell: bash
-        run: |
-          set -euo pipefail
-          PROJ="$(find src-tauri/gen/apple -maxdepth 1 -name '*.xcodeproj' | head -n 1)"
-          echo "project: $PROJ"
-          SCHEME="$(xcodebuild -list -project "$PROJ" -json | python3 -c "import json,sys; d=json.load(sys.stdin); ss=d['project']['schemes']; print(next((s for s in ss if s.endswith('_iOS')), ss[0]))")"
-          echo "scheme: $SCHEME"
-          xcodebuild -project "$PROJ" -scheme "$SCHEME" -configuration release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath src-tauri/gen/apple/build/derived \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            build
+      - name: 构建未签名 IPA
+        run: pnpm tauri ios build --no-sign --ci --target aarch64
 
-      - name: 收集产物（.app 打成未签名 IPA）
+      - name: 收集产物
         shell: bash
         run: |
           set -euo pipefail
           V="${{ steps.ver.outputs.version }}"
           mkdir -p artifacts
-          APP="$(find src-tauri/gen/apple/build -name '*.app' -type d | head -n 1)"
-          if [ -z "$APP" ]; then
-            echo "::error::没找到 .app，构建产物异常"
-            find src-tauri/gen/apple/build -maxdepth 4 | head -50
-            exit 1
+          IPA="$(find src-tauri/gen/apple/build -name '*.ipa' -type f | head -n 1)"
+          if [ -n "$IPA" ]; then
+            cp "$IPA" "artifacts/DaDa_${V}_ios_unsigned.ipa"
+          else
+            APP="$(find src-tauri/gen/apple/build -name '*.app' -type d | head -n 1)"
+            if [ -z "$APP" ]; then
+              echo "::error::既没找到 .ipa 也没找到 .app，构建产物异常"
+              find src-tauri/gen/apple/build -maxdepth 3 | head -50
+              exit 1
+            fi
+            rm -rf Payload && mkdir Payload
+            cp -R "$APP" Payload/
+            zip -qry "artifacts/DaDa_${V}_ios_unsigned.ipa" Payload
+            rm -rf Payload
           fi
-          echo "app: $APP"
-          rm -rf Payload && mkdir Payload
-          cp -R "$APP" Payload/
-          zip -qry "artifacts/DaDa_${V}_ios_unsigned.ipa" Payload
-          rm -rf Payload
           ls -lh artifacts
 
       - uses: actions/upload-artifact@v4
