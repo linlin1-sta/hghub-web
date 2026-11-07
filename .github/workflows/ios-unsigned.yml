@@ -55,6 +55,15 @@ jobs:
       - name: 生成 iOS 工程（gen/apple，不入库、每次现生成）
         run: pnpm tauri ios init --ci
 
+      - name: 同步 iOS 图标（init 只写模板默认图标，必须手动覆盖）
+        shell: bash
+        run: |
+        set -euo pipefail
+        SET="$(find src-tauri/gen/apple -type d -name 'AppIcon.appiconset' | head -n 1)"
+        echo "appiconset: $SET"
+        cp src-tauri/icons/ios/*.png "$SET"/
+        ls "$SET"
+        
       - name: 构建未签名 IPA
         run: pnpm tauri ios build --no-sign --ci --target aarch64
 
