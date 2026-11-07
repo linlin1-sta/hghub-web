@@ -38,7 +38,7 @@ export default function LoginModal() {
     <div className="p-5">
       <div className="flex items-center gap-2 mb-3">
         <span className="w-8 h-8 rounded-(--r-sm) bg-pc text-on-pc flex items-center justify-center"><ILogin size={16} /></span>
-        <span className="text-[15px] font-bold text-on">{mode === "login" ? "登录达达短剧" : "注册达达短剧"}</span>
+        <span className="text-[15px] font-bold text-on">{mode === "login" ? "登录雄哥短剧" : "注册雄哥短剧"}</span>
         <button onClick={() => setLoginOpen(false)} className="ml-auto w-7 h-7 rounded-full bg-s4 flex items-center justify-center text-mut pressable">
           <IClose size={13} />
         </button>
