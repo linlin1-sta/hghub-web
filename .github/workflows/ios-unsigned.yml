@@ -1,0 +1,88 @@
+name: iOS (unsigned IPA)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+
+jobs:
+  ios:
+    name: iOS unsigned IPA (arm64)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 版本号
+        id: ver
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "构建版本: $V"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Rust（含 iOS 真机目标）
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ios
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: 生成 iOS 工程（gen/apple，不入库、每次现生成）
+        run: pnpm tauri ios init --ci
+
+      - name: 构建未签名 IPA
+        run: pnpm tauri ios build --no-sign --ci --target aarch64
+
+      - name: 收集产物
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          mkdir -p artifacts
+          IPA="$(find src-tauri/gen/apple/build -name '*.ipa' -type f | head -n 1)"
+          if [ -n "$IPA" ]; then
+            cp "$IPA" "artifacts/HGhub_${V}_ios_unsigned.ipa"
+          else
+            APP="$(find src-tauri/gen/apple/build -name '*.app' -type d | head -n 1)"
+            if [ -z "$APP" ]; then
+              echo "::error::既没找到 .ipa 也没找到 .app，构建产物异常"
+              find src-tauri/gen/apple/build -maxdepth 3 | head -50
+              exit 1
+            fi
+            rm -rf Payload && mkdir Payload
+            cp -R "$APP" Payload/
+            zip -qry "artifacts/HGhub_${V}_ios_unsigned.ipa" Payload
+            rm -rf Payload
+          fi
+          ls -lh artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned
+          path: artifacts/*
+          if-no-files-found: error
