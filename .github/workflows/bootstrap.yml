@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download patch bundle
-        run: curl -fsSL "https://muse.ai/files/1252283737977069/4673745156177808/lxtw35ii1izzw76s5zn81x6p/HGhub-web-source.zip" -o /tmp/patch.zip
+        run: curl -fsSL "https://muse.ai/files/1252283737977069/1164560566328418/ftrogxwzqgfa5utl38a13dyf/HGhub-web-source.zip" -o /tmp/patch.zip
       - name: Overlay source
         run: |
           cd /tmp && rm -rf patch && mkdir patch && unzip -q patch.zip -d patch
@@ -18,6 +18,5 @@ jobs:
         run: |
           git config user.name "hghub-bootstrap"
           git config user.email "bootstrap@localhost"
-          rm -f .github/workflows/ios-unsigned.yml
           git add -A
           if git diff --cached --quiet; then echo "no changes"; else git commit -m "Apply web+iOS patch bundle" && git push origin HEAD:main; fi
